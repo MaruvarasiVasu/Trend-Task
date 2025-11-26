@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: trend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: trend-app
+  ports:
+  - port: 80
+    targetPort: 80   # change from 3000 → 80
+
