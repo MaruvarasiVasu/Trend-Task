@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('admin')    // Jenkins DockerHub credential
+        DOCKERHUB_CREDENTIALS = credentials('admin')
         IMAGE_NAME = "maruvarasivasu/trend-app"
         AWS_REGION = "ap-south-1"
         CLUSTER_NAME = "trend-cluster"
@@ -18,11 +18,11 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $IMAGE_NAME:$BUILD_NUMBER ."
+                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to DockerHub') {
             steps {
                 sh '''
                     echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
@@ -33,29 +33,26 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
+        stage('Deploy to Kubernetes (EKS)') {
             steps {
-                // This block will use kubeconfig once you upload it as Jenkins secret
-                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        # Ensure namespace exists
-                        kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-                        
-                        # Deploy new Docker image
-                        kubectl set image deployment/trend-app trend-app=$IMAGE_NAME:$BUILD_NUMBER -n $NAMESPACE
-                        kubectl rollout status deployment/trend-app -n $NAMESPACE
-                    '''
-                }
+                sh '''
+                    aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+                    kubectl create namespace $NAMESPACE || true
+
+                    # Deploy with specific build tag
+                    kubectl set image deployment/trend-app trend-app=$IMAGE_NAME:$BUILD_NUMBER -n $NAMESPACE
+                    kubectl rollout status deployment/trend-app -n $NAMESPACE
+                '''
             }
         }
     }
 
     post {
         success {
-            echo '✅ Deployment completed successfully!'
+            echo '✅ Deployment completed successfully! Your app should be accessible via the LoadBalancer.'
         }
         failure {
-            echo '❌ Deployment failed. Check Jenkins logs.'
+            echo '❌ Deployment failed. Please check Jenkins logs for details.'
         }
     }
 }
