@@ -1,31 +1,56 @@
 pipeline {
-    agent any
+    agent any   // Run on any available Jenkins node
+
+    environment {
+        // Add environment variables if needed
+        DEPLOY_ENV = "production"
+    }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/MaruvarasiVasu/Trend-Task.git'
+                echo "🔄 Checking out source code..."
+                checkout scm
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
-                sh 'docker build -t maruvarasivasu/trend-app:latest .'
+                echo "🛠 Building the application..."
+                // Replace with your actual build command, e.g.:
+                // sh './gradlew build'
+                sh 'echo "Simulated build step"'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Test') {
             steps {
-                sh 'docker login -u maruvarasivasu -p Sanyash@2021'
-                sh 'docker push maruvarasivasu/trend-app:latest'
+                echo "✅ Running tests..."
+                // Replace with your actual test command, e.g.:
+                // sh './gradlew test'
+                sh 'echo "Simulated test step"'
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                echo "🚀 Deploying to ${env.DEPLOY_ENV}..."
+                // Replace with your actual deploy command, e.g.:
+                // sh './deploy.sh'
+                sh 'echo "Simulated deploy step"'
             }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Deployment succeeded!"
+        }
+        failure {
+            echo "❌ Deployment failed. Check Jenkins logs for details."
+        }
+        always {
+            echo "📌 Pipeline finished at ${new Date()}"
         }
     }
 }
