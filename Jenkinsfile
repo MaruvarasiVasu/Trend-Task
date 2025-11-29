@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "maruvarasivasu/trend-task"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
+        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
     }
 
     stages {
