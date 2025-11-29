@@ -1,19 +1,24 @@
-
 pipeline {
     agent any
+
     stages {
-        stage('Test') {
+        stage('Checkout') {
+            steps { git 'https://github.com/MaruvarasiVasu/Trend-Task.git' }
+        }
+        stage('Build Docker') {
+            steps { sh 'docker build -t maruvarasivasu/trend-task:latest .' }
+        }
+        stage('Push Docker') {
             steps {
-                echo "Hello Jenkins! Pipeline is working."
+                sh 'docker login -u maruvarasivasu -p Sanyash@2021'
+                sh 'docker push maruvarasivasu/trend-task:latest'
             }
         }
-    }
-    post {
-        success {
-            echo "✅ Pipeline succeeded!"
-        }
-        failure {
-            echo "❌ Pipeline failed!"
+        stage('Deploy') {
+            steps {
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
+            }
         }
     }
 }
