@@ -1,50 +1,24 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = "maruvarasivasu/trend-task"
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
-        DOCKER_CREDENTIALS_ID = "dockerhub-creds"
-    }
-
     stages {
         stage('Checkout') {
+            steps { git 'https://github.com/MaruvarasiVasu/Trend-Task.git' }
+        }
+        stage('Build Docker') {
+            steps { sh 'docker build -t maruvarasivasu/trend-task:latest .' }
+        }
+        stage('Push Docker') {
             steps {
-                checkout scm
+                sh 'docker login -u maruvarasivasu -p Sanyash@2021'
+                sh 'docker push maruvarasivasu/trend-task:latest'
             }
         }
-
-        stage('Build Docker Image') {
+        stage('Deploy') {
             steps {
-                echo "🛠 Building Docker image..."
-                script {
-                    dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}")
-                }
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
             }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                echo "📦 Pushing Docker image to Docker Hub..."
-                script {
-                    docker.withRegistry('', DOCKER_CREDENTIALS_ID) {
-                        dockerImage.push("${IMAGE_TAG}")
-                        dockerImage.push("latest")
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Docker build & push succeeded!"
-        }
-        failure {
-            echo "❌ Pipeline failed. Check Jenkins logs."
-        }
-        always {
-            echo "📌 Pipeline finished at ${new Date()}"
         }
     }
 }
